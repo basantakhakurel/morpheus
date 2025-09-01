@@ -1,6 +1,7 @@
 # RevBayes Script -- model file for the covariomorph model
 # This script sets up a partitioned by number of states model
 # Authors -- Basanta Khakurel and Sebastian Höhna
+# Date Modified -- 2025-09-01
 
 ## Rate Scalars
 # mean
@@ -25,8 +26,10 @@ global_switch_rate ~ dnUniform(0,1E4)
 global_switch_rate.setValue(0.001)
 moves.append(mvScale(global_switch_rate, weight = 2))
 
+# we scale the switching rate such that the rates can be comparable between analyses with different number of rate categories
 switching_rate := global_switch_rate * (1/(NUM_CATEGORIES - 1))
 
+# create a matrix of switching rate to move between rate categories
 for (i in 1:NUM_CATEGORIES) {
     for (j in 1:NUM_CATEGORIES) {
         if (i == j) {
@@ -40,41 +43,68 @@ for (i in 1:NUM_CATEGORIES) {
 # setting up the Q-matrices for characters with the same number of states
 max_states = morpho.getStateDescriptions().size()
 
-# this loop saves data matrices with same number of states into different files and reads it back in again.
+# Partition by states model.
+# This loop partitions the morphological dataset by the number of character states.
+# For each number of states (2, 3, ..., max_states), we:
+#   - extract the corresponding subset of characters (using function setNumStatesPartition())
+#   - save the subset to a temporary Nexus file and re-read it
+#   - set up an appropriately sized substitution model (Q-matrix) for that subset
+#   - build a covariomorph model with NUM_CATEGORIES rate classes
+#   - clamp the data to the CTMC model.
 for (i in 1:(max_states-1)) {
+  # make a temporary copy of the data
   partition_state[i] = morpho
 
+  # obtain the subset of characters with 'i+1' states
   partition_state[i].setNumStatesPartition(i+1)
 
+  # remove the characters with states other than 'i+1' from the temporary copy
   temp_data <- partition_state[i]
   temp_data.removeExcludedCharacters()
 
   print("Processing data subset with " + (i+1) + " states...")
 
+  # write the subset of characters to a temporary Nexus file
   writeNexus(filename = "tmp/" +DATASET + "_" + MODEL + "_" + NUM_CATEGORIES + "_Cats_" + (i+1) + "_States.nexus", temp_data)
 
   print("State labels for data subset with " + (i+1) + " states...")
   temp_data.getStateDescriptions()
 
+  # read in the temporary data
   tmp_data = readDiscreteCharacterData("tmp/" +DATASET + "_" + MODEL + "_" + NUM_CATEGORIES + "_Cats_" + (i+1) + "_States.nexus")
 
+  # store the cleaned and reread data as the active partition
   partition_state[i] = tmp_data
 
+  # get the number of characters in this subset
   nc = partition_state[i].nchar()
 
+  # only continue if this subset actually contains characters
   if (nc > 0) {
     print("There are " + nc + " characters with " + (i+1) + " states in the morphological data matrix.\n")
 
+    # for each rate category, define the Q-matrix
     for (j in 1:NUM_CATEGORIES) {
       Q_sub[i][j] := fnJC(i+1)
     }
 
-    Q_morpho[i] := fnCovarion(Q_sub[i], RateScalars = rate_scalars, SwitchRates = switch_rates, rescaled = FALSE)
+    # build the covariomorph rate matrix by combining the per category Q-matrices with the rate scalars and switching rates
+    # if we rescale it here, the matrix will be rescaled twice, so the branch lengths won't refer to number of character state changes.
+    Q_morpho[i] := fnCovarion(Q_sub[i],
+                              RateScalars = rate_scalars,
+                              SwitchRates = switch_rates,
+                              rescaled = FALSE)
 
-    phyMorpho[i] ~ dnPhyloCTMC(tree = phylogeny, Q = Q_morpho[i], nSites = nc, type = "NaturalNumbers")
+    # define the phylogenetic CTMC for this partition
+    phyMorpho[i] ~ dnPhyloCTMC(tree = phylogeny,
+                               Q = Q_morpho[i],
+                               nSites = nc,
+                               type = "NaturalNumbers")
 
+    # expand the characters to account for NUM_CATEGORIES rate classes
     expanded_partition_state[i] = partition_state[i].expandCharacters(NUM_CATEGORIES)
 
+    # clamp the data subset to the CTMC model
     phyMorpho[i].clamp(expanded_partition_state[i])
   }
 }
