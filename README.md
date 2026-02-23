@@ -15,6 +15,14 @@ Views and opinions expressed are however those of the authors only and do not ne
 
 # Description of data files and file structure.
 
+## Files hosted on Dryad:
+
+`command_line_intructions.txt`: this file contains instructions to reproduce individual analysis from the manuscript
+
+`empirical_data.zip` folder: contains 164 empirical matrices that are used to test the covariomorph model in this study. The source studies are cited in the electronic supplementary materials (`Supplementary_Information.pdf`).
+
+## Files hosted on Zenodo:
+
 `Supplementary_Information.pdf`: this file includes:
 
 * Introductory figures and sections for the Covariomorph model.
@@ -34,9 +42,7 @@ Views and opinions expressed are however those of the authors only and do not ne
 
 - Table S1: Bayes factor for covariomorph model varying number of rate categories.
 
-`command_line_intructions.txt`: this file contains instructions to reproduce individual analysis from the manuscript
 
-`empirical_data.zip` folder: contains 164 empirical matrices that are used to test the covariomorph model in this study. The source studies are cited in the electronic supplementary materials (`Supplementary_Information.pdf`).
 
 `scripts.zip` folder: contains the scripts used for phylogenetic analyses using the soured data files described above.
 Please refer to our analysis pipeline (`command_line_instructions.txt`) for proper use of the following scripts:
@@ -61,4 +67,16 @@ Please refer to our analysis pipeline (`command_line_instructions.txt`) for prop
 We assume you have RevBayes installed and it can be used with `rb` in command line.
 Note that you can use the MPI version of RevBayes (`rb-mpi`) instead.
 
-To view examples of command line instructions for the scripts please refer to the file `command_line_intructions.txt`
+To view examples of command line instructions for the scripts please refer to the file `command_line_instructions.txt`
+
+## Working Directory Settings
+
+To run the analyses successfully, download both `empirical_data` and `scripts` directories into the same root folder on your local machine.
+
+Before running the commands listed in `command_line_instructions.txt`, ensure you have set your working directories in both RevBayes and R to this root folder so the scripts can locate the relative paths.
+Alternatively, you can navigate to the root folder via command line.
+
+## Software Versions:
+
+* RevBayes version 1.2.6
+* R version 4.2.3
