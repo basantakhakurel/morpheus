@@ -1,0 +1,33 @@
+# Command-line instructions for reproducing specific analyses from the manuscript.
+# Authors: Basanta Khakurel and Sebastian Höhna
+# To simulate datasets using the covariomorph model:
+
+> rb --file scripts/RevScripts/simulate_Covariomorph.Rev --args ${number_of_datasets} ${number_of_characters} ${output_directory} ${switching_rate} ${number_of_character_states} ${number_of_rate_categories}
+
+# After you simulate, you need to convert the state labels from virtual expanded states to observed states. You can do so be using:
+
+> Rscript scripts/RScripts/convert_state_labels.r -d "output_directory" -n "number_of_datasets" -s "number_of_character_states" -c "number_of_rate_categories"
+
+# To use the covariomorph model with a dataset:
+
+> rb --file scripts/RevScripts/mcmc.Rev --args ${dataset_name} ${data_directory} Covariomorph ${output_directory} ${number_of_mcmc_chains} ${number_of_rate_categories}
+
+# To perform a marginal likelihood estimation analysis:
+
+> rb --file scripts/RevScripts/Marginal_Likelihood.Rev --args ${dataset_name} ${data_directory} Covariomorph ${output_directory} ${number_of_mcmc_chains} ${number_of_rate_categories}
+
+# To summarize results from the posterior of the empirical analyses:
+(this code assumes that you have a 4 rate category Covariomorph model and a list of data files that are in `completed_list.txt`)
+
+> Rscript scripts/RScripts/summarize_empirical_covariomorph.r -f completed_list.txt -d "output_directory_from_mcmc" -m Covariomorph
+
+# To summarize results from the posterior of the simulated analyses:
+
+> Rscript scripts/RScripts/summarize_simulations_median.r -d "output_directory_from_mcmc" -n "number_of_datasets_used"
+
+# To generate figures:
+
+> Rscript scripts/RScripts/figure3_simulations_sd_vs_sr.r
+> Rscript scripts/RScripts/figure4_empirical_sd_vs_sr.r
+> Rscript scripts/RScripts/figure5_posterior_sharks_rays.r
+> Rscript scripts/RScripts/figure6_cpp_sharks_rays.r
